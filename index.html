@@ -51,7 +51,7 @@
             <p class="font-bold text-gray-600">ثواني وسيتم عرض التقرير المالي المحدث</p>
         </div>
 
-        <!-- رسالة الخطأ (لو الملف مش موجود) -->
+        <!-- رسالة الخطأ -->
         <div id="error-state" class="hidden text-center py-32 brutal-card bg-red-50 border-dashed border-4 border-red-500">
             <h2 class="text-3xl font-black text-red-600 mb-4"><i class="fa-solid fa-triangle-exclamation"></i> عذراً، تعذر العثور على ملف البيانات</h2>
             <p class="font-bold text-gray-600">تأكد من رفع ملف الإكسيل باسم "data.xlsx" في نفس مسار الموقع على GitHub.</p>
@@ -63,15 +63,15 @@
                 <h2 class="text-2xl font-black mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-positivus-lime bg-positivus-dark p-2 rounded-lg"></i> الملخص المالي العام</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="brutal-card p-6 bg-white">
-                        <p class="text-sm font-bold mb-2 text-gray-500">إجمالي المشتريات (دائن)</p>
+                        <p class="text-sm font-bold mb-2 text-gray-500">إجمالي الدائن (لنا)</p>
                         <p id="grand-purchases" class="text-3xl font-black">0</p>
                     </div>
                     <div class="brutal-card p-6 bg-positivus-lime">
-                        <p class="text-sm font-bold mb-2">إجمالي السداد (مدين)</p>
+                        <p class="text-sm font-bold mb-2">إجمالي المدين (سداد)</p>
                         <p id="grand-payments" class="text-3xl font-black">0</p>
                     </div>
                     <div class="brutal-card p-6 bg-positivus-dark text-white">
-                        <p class="text-sm font-bold mb-2 text-gray-300">المديونية المستحقة علينا</p>
+                        <p class="text-sm font-bold mb-2 text-gray-300">إجمالي الرصيد</p>
                         <p id="grand-balance" class="text-4xl font-black text-positivus-lime">0</p>
                     </div>
                 </div>
@@ -85,11 +85,13 @@
             <section>
                 <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
                     <h2 class="text-2xl font-black flex items-center gap-2">الموردين المسجلين (<span id="suppliers-count" class="text-positivus-lime bg-positivus-dark px-2 rounded">0</span>)</h2>
+                    <!-- مربع البحث -->
                     <div class="relative w-full md:w-1/3">
                         <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-positivus-dark"><i class="fa-solid fa-magnifying-glass"></i></div>
                         <input type="text" id="search-input" placeholder="ابحث عن مورد..." class="w-full pl-4 pr-12 py-3 bg-white border-2 border-positivus-dark rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-positivus-lime" style="box-shadow: 3px 3px 0px #191A23;">
                     </div>
                 </div>
+                <!-- شبكة الكروت -->
                 <div id="suppliers-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </section>
         </div>
@@ -102,20 +104,24 @@
                 <h2 id="modal-title" class="text-2xl font-black">اسم المورد</h2>
                 <button onclick="closeModal()" class="w-10 h-10 bg-white border-2 border-positivus-dark rounded-full font-bold text-xl hover:bg-positivus-dark hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
+            
+            <!-- إجماليات المورد في النافذة -->
             <div class="grid grid-cols-3 gap-0 border-b-2 border-positivus-dark bg-positivus-gray text-center divide-x-2 divide-x-reverse divide-positivus-dark">
-                <div class="p-4"><p class="text-sm font-bold text-gray-500">مشتريات</p><p id="modal-purchases" class="text-2xl font-black text-positivus-dark">0</p></div>
-                <div class="p-4"><p class="text-sm font-bold text-gray-500">سداد</p><p id="modal-payments" class="text-2xl font-black text-green-600">0</p></div>
                 <div class="p-4 bg-positivus-dark text-white"><p class="text-sm font-bold text-gray-300">الرصيد</p><p id="modal-balance" class="text-2xl font-black text-positivus-lime">0</p></div>
+                <div class="p-4"><p class="text-sm font-bold text-gray-500">مدين</p><p id="modal-payments" class="text-2xl font-black text-green-600">0</p></div>
+                <div class="p-4"><p class="text-sm font-bold text-gray-500">دائن</p><p id="modal-purchases" class="text-2xl font-black text-positivus-dark">0</p></div>
             </div>
+            
+            <!-- جدول الحركات -->
             <div class="p-0 overflow-y-auto custom-scrollbar flex-1">
                 <table class="w-full text-right border-collapse">
                     <thead class="bg-white text-positivus-dark sticky top-0 border-b-2 border-positivus-dark">
                         <tr class="text-sm font-black">
-                            <th class="p-4 border-l-2 border-positivus-dark">التاريخ</th>
-                            <th class="p-4 border-l-2 border-positivus-dark">البيان</th>
-                            <th class="p-4 border-l-2 border-positivus-dark">دائن</th>
+                            <th class="p-4 border-l-2 border-positivus-dark">الرصيد</th>
                             <th class="p-4 border-l-2 border-positivus-dark">مدين</th>
-                            <th class="p-4">الرصيد</th>
+                            <th class="p-4 border-l-2 border-positivus-dark">دائن</th>
+                            <th class="p-4 border-l-2 border-positivus-dark">البيان</th>
+                            <th class="p-4">التاريخ</th>
                         </tr>
                     </thead>
                     <tbody id="modal-table-body" class="text-sm font-bold divide-y-2 divide-positivus-dark"></tbody>
@@ -128,11 +134,11 @@
         let globalSuppliersData = [];
         let myChart = null;
 
-        // تحميل الملف تلقائياً أول ما الصفحة تفتح
+        // تحميل الملف تلقائياً
         window.onload = async function() {
             try {
-                // نطلب الملف اللي اسمه data.xlsx من نفس مسار الموقع
-                const response = await fetch('data.xlsx');
+                // نطلب الملف اللي اسمه data.xlsx
+                const response = await fetch('data.xlsx?v=' + new Date().getTime()); // لمنع الـ Cache
                 if (!response.ok) throw new Error('File not found');
                 
                 const arrayBuffer = await response.arrayBuffer();
@@ -153,8 +159,8 @@
 
         function processAllSheets(workbook) {
             globalSuppliersData = [];
-            let grandPurchases = 0;
-            let grandPayments = 0;
+            let grandDaen = 0;
+            let grandMaden = 0;
 
             workbook.SheetNames.forEach(sheetName => {
                 const worksheet = workbook.Sheets[sheetName];
@@ -162,8 +168,9 @@
 
                 const rawData = XLSX.utils.sheet_to_json(worksheet, {header: 1, raw: false, defval: ""});
                 let headerRowIndex = -1;
-                let daenIdx = -1, madenIdx = -1, balIdx = -1, dateIdx = -1, descIdx = -1;
+                let daenIdx = -1, madenIdx = -1, dateIdx = -1, descIdx = -1;
 
+                // البحث عن العناوين
                 for (let i = 0; i < Math.min(rawData.length, 20); i++) {
                     let row = rawData[i];
                     if (!row || row.length === 0) continue;
@@ -171,7 +178,6 @@
                     
                     daenIdx = cleanRow.indexOf('دائن');
                     madenIdx = cleanRow.indexOf('مدين');
-                    balIdx = cleanRow.indexOf('الرصيد');
                     descIdx = cleanRow.indexOf('البيان');
                     dateIdx = cleanRow.indexOf('التاريخ');
 
@@ -180,41 +186,49 @@
 
                 if (headerRowIndex === -1) return;
 
-                let suppPurchases = 0;
-                let suppPayments = 0;
+                let suppDaen = 0;
+                let suppMaden = 0;
                 let rows = [];
+                let runningBalance = 0; // الرصيد التراكمي
 
                 for (let i = headerRowIndex + 1; i < rawData.length; i++) {
                     let row = rawData[i];
                     if (!row || row.length === 0) continue;
 
-                    let daen = 0, maden = 0, bal = 0;
+                    let daen = 0, maden = 0;
                     if (daenIdx !== -1 && row[daenIdx]) daen = parseFloat(String(row[daenIdx]).replace(/,/g, '')) || 0;
                     if (madenIdx !== -1 && row[madenIdx]) maden = parseFloat(String(row[madenIdx]).replace(/,/g, '')) || 0;
-                    if (balIdx !== -1 && row[balIdx]) bal = parseFloat(String(row[balIdx]).replace(/,/g, '')) || 0;
                     
                     let dateStr = (dateIdx !== -1 && row[dateIdx]) ? String(row[dateIdx]).trim() : '-';
                     let descStr = (descIdx !== -1 && row[descIdx]) ? String(row[descIdx]).trim() : '-';
 
-                    if (daen === 0 && maden === 0 && bal === 0 && (descStr === '-' || descStr === '') && (dateStr === '-' || dateStr === '')) continue;
+                    if (daen === 0 && maden === 0 && (descStr === '-' || descStr === '') && (dateStr === '-' || dateStr === '')) continue;
 
-                    suppPurchases += daen;
-                    suppPayments += maden;
-                    rows.push({ date: dateStr, desc: descStr, daen: daen, maden: maden, bal: bal });
+                    suppDaen += daen;
+                    suppMaden += maden;
+                    
+                    // حساب الرصيد التراكمي سطر بسطر (دائن - مدين) أو (المديونية)
+                    runningBalance = runningBalance + daen - maden;
+
+                    rows.push({ date: dateStr, desc: descStr, daen: daen, maden: maden, bal: runningBalance });
                 }
 
                 if (rows.length > 0) {
                     globalSuppliersData.push({
-                        name: sheetName, purchases: suppPurchases, payments: suppPayments, balance: suppPurchases - suppPayments, history: rows
+                        name: sheetName, 
+                        daen: suppDaen, 
+                        maden: suppMaden, 
+                        balance: suppDaen - suppMaden, 
+                        history: rows
                     });
-                    grandPurchases += suppPurchases;
-                    grandPayments += suppPayments;
+                    grandDaen += suppDaen;
+                    grandMaden += suppMaden;
                 }
             });
 
-            document.getElementById('grand-purchases').innerText = formatNum(grandPurchases);
-            document.getElementById('grand-payments').innerText = formatNum(grandPayments);
-            document.getElementById('grand-balance').innerText = formatNum(grandPurchases - grandPayments);
+            document.getElementById('grand-purchases').innerText = formatNum(grandDaen);
+            document.getElementById('grand-payments').innerText = formatNum(grandMaden);
+            document.getElementById('grand-balance').innerText = formatNum(grandDaen - grandMaden);
             document.getElementById('suppliers-count').innerText = globalSuppliersData.length;
 
             document.getElementById('loading-state').classList.add('hidden');
@@ -227,10 +241,14 @@
         function renderCards(data) {
             const grid = document.getElementById('suppliers-grid');
             grid.innerHTML = '';
-            data.forEach((supp, index) => {
+            data.forEach((supp) => {
                 const card = document.createElement('div');
                 card.className = 'brutal-card p-5 cursor-pointer bg-white flex flex-col justify-between hover:bg-positivus-gray';
-                card.onclick = () => openModal(globalSuppliersData.indexOf(supp));
+                
+                // ربط الكارت بالاندكس الأصلي للمورد عشان النافذة تفتح صح
+                const originalIndex = globalSuppliersData.findIndex(s => s.name === supp.name);
+                card.onclick = () => openModal(originalIndex);
+                
                 let balColor = supp.balance > 0 ? 'text-red-600' : 'text-positivus-dark';
 
                 card.innerHTML = `
@@ -247,6 +265,7 @@
             });
         }
 
+        // محرك البحث مضبوط ومربوط بـ renderCards بشكل صحيح
         document.getElementById('search-input').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
             const filtered = globalSuppliersData.filter(supp => supp.name.toLowerCase().includes(searchTerm));
@@ -256,12 +275,14 @@
         function openModal(index) {
             const supp = globalSuppliersData[index];
             document.getElementById('modal-title').innerText = supp.name;
-            document.getElementById('modal-purchases').innerText = formatNum(supp.purchases);
-            document.getElementById('modal-payments').innerText = formatNum(supp.payments);
+            document.getElementById('modal-purchases').innerText = formatNum(supp.daen);
+            document.getElementById('modal-payments').innerText = formatNum(supp.maden);
             document.getElementById('modal-balance').innerText = formatNum(supp.balance);
 
             const tbody = document.getElementById('modal-table-body');
             tbody.innerHTML = '';
+            
+            // ترتيب العرض في النافذة: الرصيد، مدين، دائن، البيان، التاريخ
             supp.history.forEach(row => {
                 let tr = document.createElement('tr');
                 tr.className = "hover:bg-positivus-gray";
@@ -270,44 +291,7 @@
                 let balColor = row.bal < 0 ? 'text-red-600' : 'text-positivus-dark';
                 
                 tr.innerHTML = `
-                    <td class="p-4 border-l-2 border-positivus-dark">${row.date}</td>
-                    <td class="p-4 border-l-2 border-positivus-dark text-slate-600">${row.desc}</td>
-                    <td class="p-4 border-l-2 border-positivus-dark text-blue-600">${daenCell}</td>
+                    <td class="p-4 border-l-2 border-positivus-dark ${balColor} font-bold">${formatNum(row.bal)}</td>
                     <td class="p-4 border-l-2 border-positivus-dark text-emerald-600">${madenCell}</td>
-                    <td class="p-4 ${balColor} font-bold">${formatNum(row.bal)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            document.getElementById('supplier-modal').classList.remove('hidden');
-        }
-
-        function closeModal() { document.getElementById('supplier-modal').classList.add('hidden'); }
-
-        function drawChart(data) {
-            const ctx = document.getElementById('financeChart').getContext('2d');
-            if(myChart) myChart.destroy();
-            const sortedData = [...data].sort((a, b) => b.purchases - a.purchases).slice(0, 10);
-            const labels = sortedData.map(s => s.name);
-            const purchases = sortedData.map(s => s.purchases);
-            const payments = sortedData.map(s => s.payments);
-
-            Chart.defaults.font.family = 'Cairo'; Chart.defaults.color = '#191A23';
-            myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'المشتريات', data: purchases, backgroundColor: '#191A23', borderWidth: 2, borderColor: '#191A23', borderRadius: 4 },
-                        { label: 'السداد', data: payments, backgroundColor: '#B9FF66', borderWidth: 2, borderColor: '#191A23', borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, grid: { color: '#E5E7EB' } }, x: { grid: { display: false } } },
-                    plugins: { legend: { labels: { font: { weight: 'bold', size: 14 } } } }
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+                    <td class="p-4 border-l-2 border-positivus-dark text-blue-600">${daenCell}</td>
+                    <td class="p

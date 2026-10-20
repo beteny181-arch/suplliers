@@ -46,7 +46,7 @@
                 </div>
             </div>
             
-            <!-- زر الرفع اليدوي (بديل في حالة فشل التحميل التلقائي) -->
+            <!-- زر الرفع اليدوي -->
             <div>
                 <label for="excel-upload" class="cursor-pointer bg-positivus-dark text-white font-bold py-3 px-6 brutal-btn flex items-center gap-2 hover:bg-opacity-90">
                     <i class="fa-solid fa-upload"></i> رفع الشيت يدوياً
@@ -75,11 +75,11 @@
                 <h2 class="text-2xl font-black mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-positivus-lime bg-positivus-dark p-2 rounded-lg"></i> الملخص المالي العام</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="brutal-card p-6 bg-white">
-                        <p class="text-sm font-bold mb-2 text-gray-500">إجمالي الدائن (لنا)</p>
+                        <p class="text-sm font-bold mb-2 text-gray-500">إجمالي الدائن</p>
                         <p id="grand-purchases" class="text-3xl font-black">0</p>
                     </div>
                     <div class="brutal-card p-6 bg-positivus-lime">
-                        <p class="text-sm font-bold mb-2">إجمالي المدين (سداد)</p>
+                        <p class="text-sm font-bold mb-2">إجمالي المدين</p>
                         <p id="grand-payments" class="text-3xl font-black">0</p>
                     </div>
                     <div class="brutal-card p-6 bg-positivus-dark text-white">
@@ -160,7 +160,7 @@
             }
         };
 
-        // 2. تفعيل زر الرفع اليدوي (لو التحميل علق أو المورد حب يرفع شيت من جهازه)
+        // 2. تفعيل زر الرفع اليدوي
         document.getElementById('excel-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -339,8 +339,8 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'دائن (لنا)', data: daen, backgroundColor: '#191A23', borderWidth: 2, borderColor: '#191A23', borderRadius: 4 },
-                        { label: 'مدين (سداد)', data: maden, backgroundColor: '#B9FF66', borderWidth: 2, borderColor: '#191A23', borderRadius: 4 }
+                        { label: 'دائن', data: daen, backgroundColor: '#191A23', borderWidth: 2, borderColor: '#191A23', borderRadius: 4 },
+                        { label: 'مدين', data: maden, backgroundColor: '#B9FF66', borderWidth: 2, borderColor: '#191A23', borderRadius: 4 }
                     ]
                 },
                 options: {

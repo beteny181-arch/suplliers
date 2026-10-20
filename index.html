@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الموردين - لوحة المدير</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { positivus: { lime: '#B9FF66', dark: '#191A23', gray: '#F3F3F3' } },
+                    fontFamily: { sans: ['Cairo', 'sans-serif'], heading: ['Space Grotesk', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #FFFFFF; color: #191A23; }
+        .brutal-card { background-color: #FFFFFF; border: 2px solid #191A23; border-radius: 16px; box-shadow: 4px 4px 0px #191A23; transition: all 0.2s; }
+        .brutal-card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #191A23; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #F3F3F3; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #191A23; border-radius: 4px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto" id="report-container">
+        <!-- الهيدر -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 bg-positivus-lime border-2 border-positivus-dark rounded-xl flex items-center justify-center text-3xl brutal-card" style="box-shadow: 3px 3px 0px #191A23;">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black font-heading tracking-tight">استاذ الموردين</h1>
+                    <p class="text-sm font-bold mt-1 text-gray-500">نظام القراءة التلقائية - محدث باستمرار</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- حالة التحميل التلقائي -->
+        <div id="loading-state" class="text-center py-32 brutal-card bg-positivus-gray border-dashed border-4 border-positivus-dark">
+            <h2 class="text-3xl font-black mb-4 animate-pulse"><i class="fa-solid fa-spinner fa-spin text-positivus-lime bg-positivus-dark p-3 rounded-full"></i> جاري جلب البيانات من السيرفر...</h2>
+            <p class="font-bold text-gray-600">ثواني وسيتم عرض التقرير المالي المحدث</p>
+        </div>
+
+        <!-- رسالة الخطأ (لو الملف مش موجود) -->
+        <div id="error-state" class="hidden text-center py-32 brutal-card bg-red-50 border-dashed border-4 border-red-500">
+            <h2 class="text-3xl font-black text-red-600 mb-4"><i class="fa-solid fa-triangle-exclamation"></i> عذراً، تعذر العثور على ملف البيانات</h2>
+            <p class="font-bold text-gray-600">تأكد من رفع ملف الإكسيل باسم "data.xlsx" في نفس مسار الموقع على GitHub.</p>
+        </div>
+
+        <!-- المحتوى (يظهر بعد التحميل) -->
+        <div id="main-content" class="hidden space-y-10">
+            <section>
+                <h2 class="text-2xl font-black mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-positivus-lime bg-positivus-dark p-2 rounded-lg"></i> الملخص المالي العام</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="brutal-card p-6 bg-white">
+                        <p class="text-sm font-bold mb-2 text-gray-500">إجمالي المشتريات (دائن)</p>
+                        <p id="grand-purchases" class="text-3xl font-black">0</p>
+                    </div>
+                    <div class="brutal-card p-6 bg-positivus-lime">
+                        <p class="text-sm font-bold mb-2">إجمالي السداد (مدين)</p>
+                        <p id="grand-payments" class="text-3xl font-black">0</p>
+                    </div>
+                    <div class="brutal-card p-6 bg-positivus-dark text-white">
+                        <p class="text-sm font-bold mb-2 text-gray-300">المديونية المستحقة علينا</p>
+                        <p id="grand-balance" class="text-4xl font-black text-positivus-lime">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="brutal-card p-6 bg-white">
+                <h2 class="text-xl font-black mb-6">مؤشر حركة السحب والسداد (أعلى 10 موردين)</h2>
+                <div class="w-full h-72"><canvas id="financeChart"></canvas></div>
+            </section>
+
+            <section>
+                <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
+                    <h2 class="text-2xl font-black flex items-center gap-2">الموردين المسجلين (<span id="suppliers-count" class="text-positivus-lime bg-positivus-dark px-2 rounded">0</span>)</h2>
+                    <div class="relative w-full md:w-1/3">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-positivus-dark"><i class="fa-solid fa-magnifying-glass"></i></div>
+                        <input type="text" id="search-input" placeholder="ابحث عن مورد..." class="w-full pl-4 pr-12 py-3 bg-white border-2 border-positivus-dark rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-positivus-lime" style="box-shadow: 3px 3px 0px #191A23;">
+                    </div>
+                </div>
+                <div id="suppliers-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- النافذة المنبثقة للتفاصيل -->
+    <div id="supplier-modal" class="fixed inset-0 bg-positivus-dark bg-opacity-90 z-50 hidden flex justify-center items-center p-4">
+        <div class="brutal-card bg-white w-full max-w-5xl max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b-2 border-positivus-dark flex justify-between items-center bg-positivus-lime rounded-t-xl">
+                <h2 id="modal-title" class="text-2xl font-black">اسم المورد</h2>
+                <button onclick="closeModal()" class="w-10 h-10 bg-white border-2 border-positivus-dark rounded-full font-bold text-xl hover:bg-positivus-dark hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-3 gap-0 border-b-2 border-positivus-dark bg-positivus-gray text-center divide-x-2 divide-x-reverse divide-positivus-dark">
+                <div class="p-4"><p class="text-sm font-bold text-gray-500">مشتريات</p><p id="modal-purchases" class="text-2xl font-black text-positivus-dark">0</p></div>
+                <div class="p-4"><p class="text-sm font-bold text-gray-500">سداد</p><p id="modal-payments" class="text-2xl font-black text-green-600">0</p></div>
+                <div class="p-4 bg-positivus-dark text-white"><p class="text-sm font-bold text-gray-300">الرصيد</p><p id="modal-balance" class="text-2xl font-black text-positivus-lime">0</p></div>
+            </div>
+            <div class="p-0 overflow-y-auto custom-scrollbar flex-1">
+                <table class="w-full text-right border-collapse">
+                    <thead class="bg-white text-positivus-dark sticky top-0 border-b-2 border-positivus-dark">
+                        <tr class="text-sm font-black">
+                            <th class="p-4 border-l-2 border-positivus-dark">التاريخ</th>
+                            <th class="p-4 border-l-2 border-positivus-dark">البيان</th>
+                            <th class="p-4 border-l-2 border-positivus-dark">دائن</th>
+                            <th class="p-4 border-l-2 border-positivus-dark">مدين</th>
+                            <th class="p-4">الرصيد</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-table-body" class="text-sm font-bold divide-y-2 divide-positivus-dark"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let globalSuppliersData = [];
+        let myChart = null;
+
+        // تحميل الملف تلقائياً أول ما الصفحة تفتح
+        window.onload = async function() {
+            try {
+                // نطلب الملف اللي اسمه data.xlsx من نفس مسار الموقع
+                const response = await fetch('data.xlsx');
+                if (!response.ok) throw new Error('File not found');
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                processAllSheets(workbook);
+            } catch (error) {
+                console.error("Error loading excel file:", error);
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('error-state').classList.remove('hidden');
+            }
+        };
+
+        function formatNum(num) {
+            return Number(num).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+        }
+
+        function processAllSheets(workbook) {
+            globalSuppliersData = [];
+            let grandPurchases = 0;
+            let grandPayments = 0;
+
+            workbook.SheetNames.forEach(sheetName => {
+                const worksheet = workbook.Sheets[sheetName];
+                if(!worksheet) return;
+
+                const rawData = XLSX.utils.sheet_to_json(worksheet, {header: 1, raw: false, defval: ""});
+                let headerRowIndex = -1;
+                let daenIdx = -1, madenIdx = -1, balIdx = -1, dateIdx = -1, descIdx = -1;
+
+                for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+                    let row = rawData[i];
+                    if (!row || row.length === 0) continue;
+                    let cleanRow = row.map(cell => String(cell).trim());
+                    
+                    daenIdx = cleanRow.indexOf('دائن');
+                    madenIdx = cleanRow.indexOf('مدين');
+                    balIdx = cleanRow.indexOf('الرصيد');
+                    descIdx = cleanRow.indexOf('البيان');
+                    dateIdx = cleanRow.indexOf('التاريخ');
+
+                    if (daenIdx !== -1 && madenIdx !== -1) { headerRowIndex = i; break; }
+                }
+
+                if (headerRowIndex === -1) return;
+
+                let suppPurchases = 0;
+                let suppPayments = 0;
+                let rows = [];
+
+                for (let i = headerRowIndex + 1; i < rawData.length; i++) {
+                    let row = rawData[i];
+                    if (!row || row.length === 0) continue;
+
+                    let daen = 0, maden = 0, bal = 0;
+                    if (daenIdx !== -1 && row[daenIdx]) daen = parseFloat(String(row[daenIdx]).replace(/,/g, '')) || 0;
+                    if (madenIdx !== -1 && row[madenIdx]) maden = parseFloat(String(row[madenIdx]).replace(/,/g, '')) || 0;
+                    if (balIdx !== -1 && row[balIdx]) bal = parseFloat(String(row[balIdx]).replace(/,/g, '')) || 0;
+                    
+                    let dateStr = (dateIdx !== -1 && row[dateIdx]) ? String(row[dateIdx]).trim() : '-';
+                    let descStr = (descIdx !== -1 && row[descIdx]) ? String(row[descIdx]).trim() : '-';
+
+                    if (daen === 0 && maden === 0 && bal === 0 && (descStr === '-' || descStr === '') && (dateStr === '-' || dateStr === '')) continue;
+
+                    suppPurchases += daen;
+                    suppPayments += maden;
+                    rows.push({ date: dateStr, desc: descStr, daen: daen, maden: maden, bal: bal });
+                }
+
+                if (rows.length > 0) {
+                    globalSuppliersData.push({
+                        name: sheetName, purchases: suppPurchases, payments: suppPayments, balance: suppPurchases - suppPayments, history: rows
+                    });
+                    grandPurchases += suppPurchases;
+                    grandPayments += suppPayments;
+                }
+            });
+
+            document.getElementById('grand-purchases').innerText = formatNum(grandPurchases);
+            document.getElementById('grand-payments').innerText = formatNum(grandPayments);
+            document.getElementById('grand-balance').innerText = formatNum(grandPurchases - grandPayments);
+            document.getElementById('suppliers-count').innerText = globalSuppliersData.length;
+
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+
+            renderCards(globalSuppliersData);
+            drawChart(globalSuppliersData);
+        }
+
+        function renderCards(data) {
+            const grid = document.getElementById('suppliers-grid');
+            grid.innerHTML = '';
+            data.forEach((supp, index) => {
+                const card = document.createElement('div');
+                card.className = 'brutal-card p-5 cursor-pointer bg-white flex flex-col justify-between hover:bg-positivus-gray';
+                card.onclick = () => openModal(globalSuppliersData.indexOf(supp));
+                let balColor = supp.balance > 0 ? 'text-red-600' : 'text-positivus-dark';
+
+                card.innerHTML = `
+                    <div>
+                        <div class="w-12 h-12 bg-positivus-lime border-2 border-positivus-dark rounded-xl flex items-center justify-center mb-4 text-xl"><i class="fa-solid fa-user-tie"></i></div>
+                        <h3 class="text-xl font-black mb-4 truncate text-positivus-dark">${supp.name}</h3>
+                    </div>
+                    <div class="pt-4 border-t-2 border-positivus-dark flex justify-between items-end">
+                        <div><p class="text-xs font-bold text-gray-500 mb-1">الرصيد</p><p class="text-xl font-black ${balColor}">${formatNum(supp.balance)}</p></div>
+                        <i class="fa-solid fa-arrow-left text-2xl text-positivus-dark hover:-translate-x-2 transition-transform"></i>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = globalSuppliersData.filter(supp => supp.name.toLowerCase().includes(searchTerm));
+            renderCards(filtered);
+        });
+
+        function openModal(index) {
+            const supp = globalSuppliersData[index];
+            document.getElementById('modal-title').innerText = supp.name;
+            document.getElementById('modal-purchases').innerText = formatNum(supp.purchases);
+            document.getElementById('modal-payments').innerText = formatNum(supp.payments);
+            document.getElementById('modal-balance').innerText = formatNum(supp.balance);
+
+            const tbody = document.getElementById('modal-table-body');
+            tbody.innerHTML = '';
+            supp.history.forEach(row => {
+                let tr = document.createElement('tr');
+                tr.className = "hover:bg-positivus-gray";
+                let daenCell = row.daen > 0 ? formatNum(row.daen) : '-';
+                let madenCell = row.maden > 0 ? formatNum(row.maden) : '-';
+                let balColor = row.bal < 0 ? 'text-red-600' : 'text-positivus-dark';
+                
+                tr.innerHTML = `
+                    <td class="p-4 border-l-2 border-positivus-dark">${row.date}</td>
+                    <td class="p-4 border-l-2 border-positivus-dark text-slate-600">${row.desc}</td>
+                    <td class="p-4 border-l-2 border-positivus-dark text-blue-600">${daenCell}</td>
+                    <td class="p-4 border-l-2 border-positivus-dark text-emerald-600">${madenCell}</td>
+                    <td class="p-4 ${balColor} font-bold">${formatNum(row.bal)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('supplier-modal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('supplier-modal').classList.add('hidden'); }
+
+        function drawChart(data) {
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            const sortedData = [...data].sort((a, b) => b.purchases - a.purchases).slice(0, 10);
+            const labels = sortedData.map(s => s.name);
+            const purchases = sortedData.map(s => s.purchases);
+            const payments = sortedData.map(s => s.payments);
+
+            Chart.defaults.font.family = 'Cairo'; Chart.defaults.color = '#191A23';
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'المشتريات', data: purchases, backgroundColor: '#191A23', borderWidth: 2, borderColor: '#191A23', borderRadius: 4 },
+                        { label: 'السداد', data: payments, backgroundColor: '#B9FF66', borderWidth: 2, borderColor: '#191A23', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, grid: { color: '#E5E7EB' } }, x: { grid: { display: false } } },
+                    plugins: { legend: { labels: { font: { weight: 'bold', size: 14 } } } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
